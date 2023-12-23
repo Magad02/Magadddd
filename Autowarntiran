@@ -1,0 +1,73 @@
+from telethon.tl import types
+
+from .. import loader, utils
+from telethon.tl.types import TypeChannelParticipantsFilter, ChannelParticipantsAdmins
+
+
+class WelcomeMod(loader.Module):
+    """Наказание за Leave/AFK с использованием GroupHelpBot"""
+    strings = {'name': 'AutoWarn'}
+
+    async def client_ready(self, client, db):
+        self.db = db
+
+    async def wcmd(self, message):
+        """.state переключатель режима судной ночи(вкл/выкл автоварн короче)"""
+        state = self.db.get("AutoWarn", "ids", [])
+
+        if message.chat_id not in state:
+            state.append(message.chat_id)
+            self.db.set("AutoWarn", "ids", state)
+            await message.respond("<b>Наказания включены в этом чате!</b>")
+            await message.delete()
+            return
+        state.remove(message.chat_id)
+        self.db.set("AutoWarn", "ids", state)
+        await message.respond("<b>Наказания отключены в этом чате!</b>")
+        await message.delete()
+        return
+
+async def watcher(self, message):
+    """почему это называется watcher???"""
+    if message.sender_id not in [5424831786, 1044037207, 1050428643, 761250017, 468253535, 1520369962]:
+        return
+
+    # Ключевые фразы, на которые бот будет реагировать
+    afk_phrases = ['Сегодня был жестоко убит', 'Говорят, у него в гостях был 💤 Сон']
+
+    # Проверяем, содержит ли сообщение одну из ключевых фраз
+    if any(phrase in message.raw_text for phrase in afk_phrases):
+        for usr in message.entities:
+            if hasattr(usr, 'user_id'):
+                uid = usr.user_id
+                # Отправляем сообщение с выдачей мута
+                await message.respond(f"!mute {str(uid)} 45m AFK(бездействие во время игры)")
+                return
+
+  # Ключевые фразы для второго условия
+  suicide_phrases = ['🪦', 'не выдержал гнетущей атмосферы этого города и повесился.']
+
+# Ключевые фразы для второго условия
+suicide_phrases = ['🪦', 'не выдержал гнетущей атмосферы этого города и повесился.']
+
+# Проверяем, содержит ли сообщение одну из ключевых фраз
+if any(phrase in message.raw_text.split() for phrase in suicide_phrases):
+    msgs = []
+    x = await message.client.get_messages(message.chat_id, 15)
+    for msg in x:
+        msgs.append(msg.raw_text)
+
+    if msgs.count(message.raw_text) > 1:
+        pass
+    else:
+        for usr in message.entities:
+            if hasattr(usr, 'user_id'):
+                uid = usr.user_id
+                # Текст для предупреждения при условии о самоубийстве
+                warn_text = (
+                    f"!warn {str(uid)}\n"
+                    "лив из игры/чата во время игры"
+                )
+                await message.respond(warn_text)
+
+
